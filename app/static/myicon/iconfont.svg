@@ -1,0 +1,29 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd" >
+<!--
+2013-9-30: Created.
+-->
+<svg>
+<metadata>
+Created by iconfont
+</metadata>
+<defs>
+
+<font id="iconfont" horiz-adv-x="1024" >
+  <font-face
+    font-family="iconfont"
+    font-weight="500"
+    font-stretch="normal"
+    units-per-em="1024"
+    ascent="896"
+    descent="-128"
+  />
+    <missing-glyph />
+    
+    <glyph glyph-name="electronics" unicode="&#58990;" d="M840.533333 778.666667H183.466667c-59.733333 0-108.8-49.066667-108.8-108.8v-379.733334c0-59.733333 49.066667-108.8 108.8-108.8h232.533333v-115.2H341.333333c-17.066667 0-32-14.933333-32-32s14.933333-32 32-32h341.333334c17.066667 0 32 14.933333 32 32s-14.933333 32-32 32h-74.666667v115.2h232.533333c59.733333 0 108.8 49.066667 108.8 108.8V669.866667c0 59.733333-49.066667 108.8-108.8 108.8zM544 66.133333h-64v115.2h64v-115.2z m341.333333 224c0-25.6-19.2-44.8-44.8-44.8H183.466667c-25.6 0-44.8 19.2-44.8 44.8V669.866667c0 25.6 19.2 44.8 44.8 44.8h657.066666c25.6 0 44.8-19.2 44.8-44.8v-379.733334z"  horiz-adv-x="1024" />
+
+    
+
+
+  </font>
+</defs></svg>
