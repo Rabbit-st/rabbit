@@ -142,7 +142,7 @@ server {
     }
 }
 $ nginx -t
-$ systemctl reload nginx
+$ systemctl start nginx
 ```
 访问：
 ```
