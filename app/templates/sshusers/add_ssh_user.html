@@ -1,0 +1,108 @@
+{% extends "common/base_form.html" %}
+
+{% import 'common/base_macro.html' as base_macro %}
+
+{% block title %}
+        <title>添加ssh</title>
+{% endblock %}
+
+{% block form_item %}
+    {{ base_macro.form_item(text='名称', name='name', type='input', red='1', lay_verify='required') }}
+    {{ base_macro.form_item(text='ssh user', name='ssh_user', type='input', red='1', lay_verify='required') }}
+    {{ base_macro.form_item(text='密码类型', name='pass_type', red='1',type='select',lay_filter='pass-type', data=[{'id':'1','v':'密码'},
+                                                                                {'id':'2','v':'密钥','s':'1'}]) }}
+    <div class="layui-form-item">
+        <label class="layui-form-label"><span style="color:red;">*</span><span class='tips'>密钥</span></label>
+        <div class="layui-input-inline" id="key">
+            <button plain type="button" class="pear-btn pear-btn-primary" name="ssh_password" id="password">上传密钥</button>
+        </div>
+        <div class="layui-input-inline" id="pass" style="display:none;">
+            <input type="text" name="ssh_password" lay-verify="" autocomplete="off" class="layui-input">
+        </div>
+    </div>
+    {{ base_macro.form_item(text='备注', name='remark', type='textarea') }}
+{% endblock %}
+
+{% block script %}
+<script>
+    layui.use(['form', 'jquery','upload'], function () {
+        let form = layui.form
+        let $ = layui.jquery
+        let upload = layui.upload
+
+        //选完文件后不自动上传
+        upload.render({
+            elem: '#password'
+            , url: '/api/ssh_users' //改成您自己的上传接口
+            , headers: get_authorization()
+            , method: 'post'
+            , accept: 'file'
+            , auto: false
+            , before: function (obj) {
+                layer.load(); // 上传loading
+            }
+            , done: function (res) {
+                layer.closeAll('loading');
+                if (res.code == 1) {
+                    layer.msg(res.msg);
+                } else {
+                    layer.msg(res.msg)
+                }
+                console.log(res);
+            }
+            , error: function (index, upload) {
+                layer.closeAll('loading');
+                layer.msg('上传失败');
+            }
+        });
+
+        form.on('select(pass-type)', function(data){
+            let tips='';
+            if (data.value == 1) {
+                $('#pass').show();
+                $('#key').hide();
+                tips='密码';
+                //$('#key').find('span').remove();
+            } else {
+                $('#pass').hide();
+                $('#pass').find('input').val('');
+                $('#key').show();
+                tips='密钥';
+            }
+            $('#pass').parent().find('span.tips').text(tips);
+        });
+
+        form.on('submit(save)', function (data) {
+            var fd = new FormData($("#form-data")[0]);
+            $.ajax({
+                url: '/api/ssh_users',
+                data: fd,
+                type: 'post',
+                processData: false,
+                contentType: false,
+                async: false,
+                headers: get_authorization(),
+                success: function (result) {
+                    if (result.code === 1) {
+                        layer.msg(result.msg, {icon: 1, time: 1000}, function () {
+                            parent.layer.close(parent.layer.getFrameIndex(window.name))//关闭当前页
+                            parent.layui.table.reload('table-data')
+                        })
+                    } else {
+                        let msg = ''
+                        if (Object.prototype.toString.call(result.msg) === '[object Object]') {
+                            for (var i in result.msg) {
+                                msg += result.msg[i][0] + '\n';
+                            }
+                        } else {
+                            msg = result.msg;
+                        }
+                        layer.msg(msg, {icon: 2, time: 1000})
+                    }
+                }
+            })
+            return false
+        })
+    })
+</script>
+{% endblock %}

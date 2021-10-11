@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+{% import 'common/base_macro.html' as base_macro %}
+
+<head>
+    {% block title %}
+        <title></title>
+    {% endblock %}
+{% block head %}
+    {{ base_macro.header_auth() }}
+{% endblock %}
+</head>
+
+<body class="pear-container">
+{% block search_body %}
+<div class="layui-card">
+    <div class="layui-card-body">
+        <form class="layui-form" action="">
+            <div class="layui-form-item">
+                {% block search_item %}
+                    {{ base_macro.search_input(label_name='名称', name='name') }}
+                {% endblock %}
+                {{ base_macro.search_button() }}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block table_body %}
+<div class="layui-card">
+    <div class="layui-card-body">
+        {% block search %}
+            {{ base_macro.table('table-data') }}
+        {% endblock %}
+    </div>
+</div>
+{% endblock %}
+
+</body>
+
+<script type="text/html" id="table-bar">
+    {% block table_bar %}
+        {{ base_macro.button(lay_event="edit", text='',button_class="pear-btn-primary pear-btn-sm", i_class="layui-icon-edit") }}
+        {{ base_macro.button(lay_event="remove", text='',button_class="pear-btn-danger pear-btn-sm", i_class="layui-icon-delete") }}
+    {% endblock %}
+</script>
+
+<script type="text/html" id="table-toolbar">
+    {% block table_toolbar %}
+        {{ base_macro.button(lay_event="add", text='添加',button_class="pear-btn-primary pear-btn-md", i_class="layui-icon-add-1") }}
+    {% endblock %}
+</script>
+
+<script type="text/html" id="state-switch">
+    {% block state_switch %}
+        {{ base_macro.checkbox_state(name='state',checked='{{# if(d.state==1){ }} checked {{# } }}',value='{{d.id}}',lay_filter='state') }}
+    {% endblock %}
+</script>
+
+{% include 'common/footer.html' %}
+
+{% block script %}
+{% endblock %}
+</html>

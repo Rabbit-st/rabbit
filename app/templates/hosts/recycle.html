@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>服务器管理</title>
+    {% include 'common/auth.html' %}
+    {% include 'common/header.html' %}
+</head>
+<body class="pear-container">
+<div class="layui-card">
+    <div class="layui-card-body">
+        <table id="host-table" lay-filter="host-table"></table>
+    </div>
+</div>
+</body>
+
+<script type="text/html" id="host-toolbar">
+    <button class="pear-btn pear-btn-primary pear-btn-md" lay-event="batchRecovery">
+        <i class="layui-icon layui-icon-add-1"></i>
+        恢复数据
+    </button>
+    <button class="pear-btn pear-btn-danger pear-btn-md" lay-event="batchRemove">
+        <i class="layui-icon layui-icon-delete"></i>
+        彻底删除
+    </button>
+</script>
+{# 用户注册时间 #}
+<script type="text/html" id="createTime">
+    {{ '  {{layui.util.toDateString(d.create_time,  "yyyy-MM-dd HH:mm:ss")}' |safe }}}
+</script>
+<script type="text/html" id="updateTime">
+    {{ '  {{layui.util.toDateString(d.update_time,  "yyyy-MM-dd HH:mm:ss")}' |safe }}}
+</script>
+<script type="text/html" id="deleteTime">
+    {{ '  {{layui.util.toDateString(d.delete_time,  "yyyy-MM-dd HH:mm:ss")}' |safe }}}
+</script>
+
+{% include 'common/footer.html' %}
+<script>
+    layui.use(['table', 'form', 'jquery', 'popup', 'common'], function () {
+        let table = layui.table
+        let form = layui.form
+        let $ = layui.jquery
+        let popup = layui.popup
+
+        let cols = [
+            [
+                {type: 'checkbox'},
+                {title: '地区', field: 'city', align: 'center', width: 100},
+                {title: '服务器IP', field: 'host_ip', align: 'center'},
+                {title: '主机名', field: 'host_name', align: 'center'},
+                {title: '项目', field: 'project_name', align: 'center'},
+                {title: '站点域名', field: 'site_name', align: 'center'},
+                {title: '备注', field: 'remark', align: 'center'},
+                {title: '创建时间', field: 'create_time', templet: '#createTime',align: 'center'},
+                {title: '更新时间', field: 'update_time', templet: '#updateTime',align: 'center'},
+                {title: '删除时间', field: 'delete_time', templet: '#deleteTime',align: 'center'},
+            ]
+        ]
+
+        table.render({
+            elem: '#host-table',
+            url: '/api/hosts?state=0',
+            page: true,
+            cols: cols,
+            skin: 'line',
+            headers: get_authorization(),
+            toolbar: '#host-toolbar',
+            defaultToolbar: [{
+                layEvent: 'refresh',
+                icon: 'layui-icon-refresh',
+            }, 'filter', 'print', 'exports']
+        })
+
+        // 下拉框赋值
+        $.ajax({
+            url: '/api/projects?page=1&limit=5',
+            type: 'get',
+            headers: get_authorization(),
+            success: function (res) {
+                let p_data
+                if (res.code == 0 ){
+                    p_data = res.data
+                } else {
+                    p_data = []
+                }
+                var host_select = xmSelect.render({
+                    el: '#project',
+                    prop: {
+                        name: 'name',
+                        value: 'id'
+                    },
+                    theme: {
+                        color:localStorage.getItem('theme-color-context','#8dc63f')
+                    },
+                    name: 'project_id',
+                    data: p_data,
+                    paging: true,
+                    filterable: true,
+                    pageEmptyShow: false,
+                    pageSize: 8,
+                    toolbar: {
+                        show: true,
+                    },
+                    tips: '选择项目',
+                    pageRemote: true,
+                    empty: '呀, 没有数据呢',
+                    remoteMethod: function (val, cb, show, pageIndex) {
+                        // val: 搜索框的内容, 不开启搜索默认为空, cb: 回调函数, show: 当前下拉框是否展开, pageIndex: 当前第几页
+                        $.ajax({
+                            method: 'get',
+                            url: '/api/projects?page=' + pageIndex + '&limit=5&s=' + val,
+                            headers: get_authorization(),
+                            success: function (res) {
+                                if (res.code == 0) {
+                                    // 分页回调
+                                    cb(res.data, res.count / 5);
+                                } else {
+                                    cb(res.msg, 0);
+                                }
+                            }
+                        })
+                    }
+                })
+            }
+        });
+
+        table.on('toolbar(host-table)', function (obj) {
+            if (obj.event === 'batchRecovery') {
+                window.batchRecovery(obj)
+            } else if (obj.event === 'batchRemove') {
+                window.batchRemove(obj)
+            }
+        })
+
+        window.batchRecovery = function (obj) {
+            let data = table.checkStatus(obj.config.id).data
+            if (data.length === 0) {
+                layer.msg('未选中数据', {
+                    icon: 3,
+                    time: 1000
+                })
+                return false
+            }
+            var ids = []
+            var hasCheck = table.checkStatus('host-table')
+            var hasCheckData = hasCheck.data
+            if (hasCheckData.length > 0) {
+                $.each(hasCheckData, function (index, element) {
+                    ids.push(element.id)
+                })
+            }
+            //console.log(ids)
+            layer.confirm('确定要恢复选中数据吗', {
+                icon: 3,
+                title: '提示'
+            }, function (index) {
+                layer.close(index)
+                let loading = layer.load()
+                $.ajax({
+                    url: '/api/hosts/recycle',
+                    data: JSON.stringify({ids: ids}),
+                    dataType: 'json',
+                    type: 'post',
+                    contentType: "application/json; charset=utf-8",
+                    headers: get_authorization(),
+                    success: function (result) {
+                        layer.close(loading)
+                        if (result.code === 1) {
+                            popup.success(result.msg, function () {
+                                table.reload('host-table')
+                            })
+                        } else {
+                            popup.failure(result.msg)
+                        }
+                    }
+                })
+            })
+        }
+
+        window.batchRemove = function (obj) {
+            let data = table.checkStatus(obj.config.id).data
+            if (data.length === 0) {
+                layer.msg('未选中数据', {
+                    icon: 3,
+                    time: 1000
+                })
+                return false
+            }
+            var ids = []
+            var hasCheck = table.checkStatus('host-table')
+            var hasCheckData = hasCheck.data
+            if (hasCheckData.length > 0) {
+                $.each(hasCheckData, function (index, element) {
+                    ids.push(element.id)
+                })
+            }
+            //console.log(ids)
+            layer.confirm('确定要删除选中数据吗', {
+                icon: 3,
+                title: '提示'
+            }, function (index) {
+                layer.close(index)
+                let loading = layer.load()
+                $.ajax({
+                    url: '/api/hosts/remove',
+                    data: JSON.stringify({ids: ids}),
+                    dataType: 'json',
+                    type: 'delete',
+                    contentType: "application/json; charset=utf-8",
+                    headers: get_authorization(),
+                    success: function (result) {
+                        layer.close(loading)
+                        if (result.code === 1) {
+                            popup.success(result.msg, function () {
+                                table.reload('host-table')
+                            })
+                        } else {
+                            popup.failure(result.msg)
+                        }
+                    }
+                })
+            })
+        }
+
+        window.refresh = function () {
+            table.reload('host-table')
+        }
+    })
+</script>
+</html>

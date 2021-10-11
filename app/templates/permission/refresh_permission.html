@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>权限</title>
+    {% include 'common/auth.html' %}
+    {% include 'common/header.html' %}
+</head>
+<body class="pear-container">
+<div class="layui-card">
+    <div class="layui-card-body">
+        <form class="layui-form" action="">
+            <div class="layui-form-item">
+                <button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="power-refresh">
+                    <i class="layui-icon layui-icon-search"></i>
+                    刷新权限
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+</body>
+{% include 'common/footer.html' %}
+<script>
+  layui.use(['layer', 'form', 'jquery'], function () {
+    let form = layui.form
+    let $ = layui.jquery
+    let layer = layui.layer
+
+    form.on('submit(power-refresh)', function (data) {
+        $.ajax({
+          url:'/api/permissions/refresh',
+          type: 'get',
+          headers: get_authorization(),
+          success:function(res){
+              if (res.code === 1) {
+                  layer.msg(res.msg, {icon: 1,time: 1000});
+              } else {
+                  layer.msg(res.msg, {icon: 2,time: 1000});
+              }
+          },
+          error: function(){
+            layer.msg('刷新失败', {icon: 2, time: 1000});
+          }
+        });
+        return false;
+    })
+
+
+  })
+</script>
+</html>

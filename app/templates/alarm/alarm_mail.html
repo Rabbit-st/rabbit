@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html class="x-admin-sm">
+    <head>
+        <meta charset="UTF-8">
+        <title>报警邮件配置</title>
+        <meta name="renderer" content="webkit">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <meta name="viewport" content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi" />
+        <link rel="stylesheet" href="/static/css/font.css">
+        <link rel="stylesheet" href="/static/css/xadmin.css">
+        <link rel="stylesheet" href="/static/myicon/iconfont.css">
+        <script src="/static/lib/layui/layui.js" charset="utf-8"></script>
+        <script type="text/javascript" src="/static/js/xadmin.js"></script>
+       <!-- <script type="text/javascript" src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script> -->
+        <script src="/static/js/my/main.js" charset="utf-8"></script>
+        <script src="/static/js/custom/checkToken.js" charset="utf-8"></script>
+        <!--[if lt IE 9]>
+          <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+          <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+    </head>
+    <body>
+        <div class="x-nav">
+          <span class="layui-breadcrumb">
+            <a href="">报警配置</a>
+          </span>
+          <a class="layui-btn layui-btn-small" style="line-height:1.6em;margin-top:3px;float:right" onclick="location.reload()" title="刷新">
+            <i class="layui-icon layui-icon-refresh" style="line-height:30px"></i></a>
+        </div>
+        <div class="layui-fluid">
+            <div class="layui-row layui-col-space15">
+                <div class="layui-col-md12">
+                    <div class="layui-card">
+                        <div class="layui-card-body ">
+                            <form class="layui-form layui-col-space5">
+                                <div class="layui-input-inline layui-show-xs-block">
+                                    <select name="types" lay-filter="mtype">
+                                        <option value="">选择类型</option>
+                                    </select>
+                                </div>
+                                <div class="layui-input-inline layui-show-xs-block">
+                                    <select name="groups" lay-filter="mgroup">
+                                        <option value="">选择组别</option>
+                                    </select>
+                                </div>
+                                <div class="layui-input-inline layui-show-xs-block">
+                                    <select name="state" lay-filter="mstate">
+                                        <option value="">选择状态</option>
+                                    </select>
+                                </div>
+                                <div class="layui-input-inline layui-show-xs-block" style="width: 230px;">
+                                    <input type="text" name="q"  placeholder="搜索" autocomplete="off" class="layui-input">
+                                </div>
+                                <div class="layui-input-inline layui-show-xs-block">
+                                    <button class="layui-btn"  lay-submit="" lay-filter="search"><i class="layui-icon">&#xe615;</i></button>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="layui-card-header">
+                            <button class="layui-btn layui-btn-primary" onclick="enAll()"><i class="layui-icon">&#x1005;</i>批量启用</button>
+                            <button class="layui-btn layui-btn-danger" onclick="disAll()"><i class="layui-icon"></i>批量禁用</button>
+                        </div>
+                        <div class="layui-card-body layui-table-body layui-table-main">
+                               <table class="layui-table layui-form" id="alarm-mail" lay-filter="alarm-mail">
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> 
+    </body>
+    <script type="text/html" id="toolbarswitchtp">
+        <span class="layui-btn layui-btn-normal layui-btn-mini {{ d.state == 0 ? 'layui-btn-disabled' : ''}}">{{ d.state == 0 ? '是' : '否' }}</span>
+    </script>
+    <script type="text/html" id="toolbaroper">
+        <a class="layui-btn layui-btn-mini layui-btn-normal" lay-event="edit">编辑</a>
+        <a class="layui-btn layui-btn-mini layui-btn-danger" lay-event="disable">禁用</a>
+    </script>
+    <script>
+      layui.use(['laydate','form', 'table', 'layer', 'element', 'jquery'], function(){
+        var laydate = layui.laydate,
+            form = layui.form,
+            table = layui.table,
+            layer = layui.layer,
+            element = layui.element;
+            url = '/api/alarm/mail',
+            ssh_id = 1,
+            $ = layui.jquery;
+            level = getlStorage('l');
+
+        checkToken($);
+
+        alarm_mail_render(table, url);
+        m_select_reload(form,'/api/alarm/mail/mtype', 'types');
+        m_select_reload(form,'/api/alarm/mail/group', 'groups');
+        m_select_reload(form,'/api/alarm/mail/state', 'state');
+
+        // 监听表格工具栏事件
+        table.on('tool(alarm-mail)', function(obj){
+          var data = obj.data;
+          switch(obj.event){
+            // 编辑按钮
+            case 'edit':
+              layer.open({
+                type: 2
+                ,area: ['500px', '800px']
+                ,fix: false
+                ,maxmin: true
+                ,shadeClose: true
+                ,shade:0.4
+                ,title: '编辑'
+                ,content: '/edit_alarm_mail'
+                ,success: function(layero, index){
+                  var body = layer.getChildFrame('body', index);
+                  var iframeWin = layero.find('iframe')[0].contentWindow;  // 得到iframe页的窗口对象，执行iframe页的方法。
+                  body.find('#L_monitorid').val(data.monitorid);
+                  body.find('#L_mtype').val(data.mtype);
+                  body.find('#L_groupname').val(data.groupname);
+                  body.find('#L_mhost').val(data.mhost);
+                  body.find('#L_host').val(data.host);
+                  body.find('#L_ip').val(data.ip);
+                  body.find('#L_key_').val(data.key_);
+                  body.find('#L_ismonitor').val(data.ismonitor);
+                  body.find('#L_comparetype').val(data.comparetype);
+                  body.find('#L_comparevalue').val(data.comparevalue);
+                  body.find('#L_comparexpire').val(data.comparexpire);
+                  iframeWin.layui.form.render();
+                }
+                ,end: function() {
+                    var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+                    parent.layer.close(index); //再执行关闭   
+                }
+              });
+            break;
+            case 'disable':
+              dis_alarm_mail(obj, data)
+            break;
+          };
+        });
+
+        // 监听全选
+        form.on('checkbox(checkall)', function(data){
+
+          if(data.elem.checked){
+            $('tbody input').prop('checked',true);
+          }else{
+            $('tbody input').prop('checked',false);
+          }
+          form.render('checkbox');
+        });         
+        // 监听搜索
+        form.on('submit(search)', function(data){
+            //console.log(data.field);
+            var url;
+            url = '/api/alarm/mail/search?q=' + data.field.q + '&type=' + data.field.types + '&group=' + data.field.groups + '&state=' + data.field.state;
+            alarm_mail_render(table, url);
+            return false;
+        });
+
+      });
+
+      function disAll(argument) {
+        var checkStatus = layui.table.checkStatus('alarm-mail')
+              ,data = checkStatus.data;
+        if(typeof data == "undefined" || data == null || data == ""){
+            layer.msg('未选中');
+        } else {
+          layer.confirm('确认要禁用吗',function(index){
+            //捉到所有被选中的，发异步进行删除
+            var ids = {method: 'DELETE',data: []};
+            $.each(data, function(index, value){
+                ids.data.push(value.monitorid)
+            });
+            $.ajax({
+              url:'/api/alarm/mail/batch',
+              type: 'POST',
+              headers: {
+                "Authorization": 'Bearer ' + localStorage.getItem('token')
+              },
+              data: JSON.stringify(ids),
+              dataType: 'json',
+              contentType: "application/json; charset=utf-8",
+              success:function(data){
+                layer.msg('禁用成功', {icon: 1});
+                layui.table.reload('alarm-mail');
+                // $(".layui-form-checked").not('.header').parents('tr').remove();
+              },
+              error: function(data){
+                layer.msg('禁用失败', {icon: 1});
+              }
+            });
+          });
+        }
+      }
+      function enAll(argument) {
+        var checkStatus = layui.table.checkStatus('alarm-mail')
+              ,data = checkStatus.data;
+        if(typeof data == "undefined" || data == null || data == ""){
+            layer.msg('未选中');
+        } else {
+          layer.confirm('确认要启用吗',function(index){
+            //捉到所有被选中的，发异步进行删除
+            var ids = {method: 'PUT',data: []};
+            $.each(data, function(index, value){
+                ids.data.push(value.monitorid)
+            });
+            $.ajax({
+              url:'/api/alarm/mail/batch',
+              type: 'POST',
+              headers: {
+                "Authorization": 'Bearer ' + localStorage.getItem('token')
+              },
+              data: JSON.stringify(ids),
+              dataType: 'json',
+              contentType: "application/json; charset=utf-8",
+              success:function(data){
+                layer.msg('启用成功', {icon: 1});
+                layui.table.reload('alarm-mail');  // 重载表格数据
+                // $(".layui-form-checked").not('.header').parents('tr').remove();
+              },
+              error: function(data){
+                layer.msg('启用失败', {icon: 1});
+              }
+            });
+          });
+        }
+      }
+    </script>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html class="x-admin-sm">
+    <head>
+        <meta charset="UTF-8">
+        <title>角色</title>
+        <meta name="renderer" content="webkit">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <meta name="viewport" content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi" />
+        <link rel="stylesheet" href="/static/css/font.css">
+        <link rel="stylesheet" href="/static/css/xadmin.css">
+        <link rel="stylesheet" href="/static/myicon/iconfont.css">
+        <link rel="stylesheet" href="/static/lib/layui/css/layui.css">
+        <script src="/static/lib/layui/layui.js" charset="utf-8"></script>
+        <script type="text/javascript" src="/static/js/xadmin.js"></script>
+        <script src="/static/js/my/main.js" charset="utf-8"></script>
+        <!--[if lt IE 9]>
+          <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+          <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+    </head>
+    <body>
+        <div id="test1"></div>
+    </body>
+    <script>
+      layui.use(['transfer', 'jquery'], function(){
+        var transfer = layui.transfer,
+            $ = layui.jquery;
+
+var token = localStorage.getItem('token');
+    if(typeof token == "undefined" || token == null || token == ""){
+        window.location.href = '/login';
+    }else{
+      $.ajax({
+        url: '/api/frontcheck',
+        type: 'post',
+        dataType: 'json',
+        headers: {
+            "Authorization": 'Bearer ' + token
+        },
+        error:function(data){
+            if (data.status != 200 ){
+                window.location.href = '/login';
+            }
+        }
+      })
+    }
+
+
+            transfer.render({
+      elem: '#test1'  //绑定元素
+      ,data: [
+        {"value": "1", "title": "李白", "disabled": "", "checked": ""}
+        ,{"value": "2", "title": "杜甫", "disabled": "", "checked": ""}
+        ,{"value": "3", "title": "贤心", "disabled": "", "checked": ""}
+        ,{"value": "3", "title": "贤心", "disabled": "", "checked": ""}
+        ,{"value": "3", "title": "贤心", "disabled": "", "checked": ""}
+        ,{"value": "3", "title": "贤心", "disabled": "", "checked": ""}
+        ,{"value": "3", "title": "贤心", "disabled": "", "checked": ""}
+        ,{"value": "3", "title": "贤心", "disabled": "", "checked": ""}
+        ,{"value": "3", "title": "贤心", "disabled": "", "checked": ""}
+        ,{"value": "3", "title": "贤心", "disabled": "", "checked": ""}
+        ,{"value": "3", "title": "贤心", "disabled": "", "checked": ""}
+        ,{"value": "3", "title": "贤心", "disabled": "", "checked": ""}
+        ,{"value": "3", "title": "贤心", "disabled": "", "checked": ""}
+        ,{"value": "3", "title": "贤心", "disabled": "", "checked": ""}
+        ,{"value": "3", "title": "贤心", "disabled": "", "checked": ""}
+        ,{"value": "3", "title": "贤心", "disabled": "", "checked": ""}
+        ,{"value": "3", "title": "贤心", "disabled": "", "checked": ""}
+      ]
+      ,id: 'demo1' //定义索引
+    });
+    })
+    </script>
+</html>

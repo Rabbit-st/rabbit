@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>服务器管理</title>
+    {% include 'common/auth.html' %}
+    {% include 'common/header.html' %}
+</head>
+<body class="pear-container">
+<div class="layui-card">
+    <div class="layui-card-body">
+        <form class="layui-form" action="">
+            <div class="layui-form-item">
+                <label class="layui-form-label">选择项目</label>
+                <div class="layui-input-inline">
+                    <div id="project" name="project_id" class="xm-select"></div>
+                </div>
+                <label class="layui-form-label">ip</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="host_ip" placeholder="" class="layui-input">
+                </div>
+                <button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query">
+                    <i class="layui-icon layui-icon-search"></i>
+                    查询
+                </button>
+                <button type="reset" class="pear-btn pear-btn-md">
+                    <i class="layui-icon layui-icon-refresh"></i>
+                    重置
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="layui-card">
+    <div class="layui-card-body">
+        <table id="host-table" lay-filter="host-table"></table>
+    </div>
+</div>
+</body>
+
+<script type="text/html" id="host-toolbar">
+    <button class="pear-btn pear-btn-primary pear-btn-md" lay-event="add">
+        <i class="layui-icon layui-icon-add-1"></i>
+        添加
+    </button>
+    <button class="pear-btn pear-btn-primary pear-btn-md" lay-event="batchAdd">
+        <i class="layui-icon layui-icon-add-1"></i>
+        批量添加
+    </button>
+    <button class="pear-btn pear-btn-danger pear-btn-md" lay-event="batchRemove">
+        <i class="layui-icon layui-icon-delete"></i>
+        删除
+    </button>
+    <button class="pear-btn pear-btn-md" lay-event="recycle">
+        <i class="layui-icon layui-icon-delete"></i>
+        回收站
+    </button>
+</script>
+
+<script type="text/html" id="host-bar">
+
+    <button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="edit"><i
+            class="layui-icon layui-icon-edit"></i>
+    </button>
+    <button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="remove"><i
+            class="layui-icon layui-icon-delete"></i>
+    </button>
+</script>
+
+<script type="text/html" id="host-state">
+    <input type="checkbox" name="state" value="{{ "{{d.id}}" }}" lay-skin="switch" lay-text="启用|禁用"
+    lay-filter="role-state" {{ "{{# if(d.state==1){ }} checked {{# } }}" }}>
+</script>
+{% include 'common/footer.html' %}
+<script>
+    layui.use(['table', 'form', 'jquery', 'popup', 'common'], function () {
+        let table = layui.table
+        let form = layui.form
+        let $ = layui.jquery
+        let popup = layui.popup
+
+
+        let cols = [
+            [
+                {type: 'checkbox'},
+                {title: '地区', field: 'city', align: 'center', width: 100},
+                {title: '服务器IP', field: 'host_ip', align: 'center'},
+                {title: '主机名', field: 'host_name', align: 'center'},
+                {title: '项目', field: 'project_name', align: 'center'},
+                {title: '站点域名', field: 'site_name', align: 'center'},
+                {title: '备注', field: 'remark', align: 'center'},
+                {title: '操作', toolbar: '#host-bar', align: 'center', width: 195}
+            ]
+        ]
+
+        table.render({
+            elem: '#host-table',
+            url: '/api/hosts',
+            page: true,
+            cols: cols,
+            skin: 'line',
+            headers: get_authorization(),
+            toolbar: '#host-toolbar',
+            defaultToolbar: [{
+                layEvent: 'refresh',
+                icon: 'layui-icon-refresh',
+            }, 'filter', 'print', 'exports']
+        })
+
+        // 下拉框赋值
+        $.ajax({
+            url: '/api/projects?page=1&limit=5',
+            type: 'get',
+            headers: get_authorization(),
+            success: function (res) {
+                let p_data
+                if (res.code == 0) {
+                    p_data = res.data
+                } else {
+                    p_data = []
+                }
+                var host_select = xmSelect.render({
+                    el: '#project',
+                    prop: {
+                        name: 'name',
+                        value: 'id'
+                    },
+                    theme: {
+                        color: localStorage.getItem('theme-color-context', '#8dc63f')
+                    },
+                    name: 'project_id',
+                    data: p_data,
+                    paging: true,
+                    filterable: true,
+                    pageEmptyShow: false,
+                    pageSize: 8,
+                    toolbar: {
+                        show: true,
+                    },
+                    tips: '选择项目',
+                    pageRemote: true,
+                    empty: '呀, 没有数据呢',
+                    remoteMethod: function (val, cb, show, pageIndex) {
+                        // val: 搜索框的内容, 不开启搜索默认为空, cb: 回调函数, show: 当前下拉框是否展开, pageIndex: 当前第几页
+                        $.ajax({
+                            method: 'get',
+                            url: '/api/projects?page=' + pageIndex + '&limit=5&s=' + val,
+                            headers: get_authorization(),
+                            success: function (res) {
+                                if (res.code == 0) {
+                                    // 分页回调
+                                    cb(res.data, res.count / 5);
+                                } else {
+                                    cb(res.msg, 0);
+                                }
+                            }
+                        })
+                    }
+                })
+            }
+        });
+        table.on('tool(host-table)', function (obj) {
+            if (obj.event === 'remove') {
+                window.remove(obj)
+            } else if (obj.event === 'edit') {
+                window.edit(obj)
+            }
+        })
+
+        table.on('toolbar(host-table)', function (obj) {
+            if (obj.event === 'add') {
+                window.add()
+            } else if (obj.event === 'refresh') {
+                window.refresh()
+            } else if (obj.event === 'batchRemove') {
+                window.batchRemove(obj)
+            } else if (obj.event === 'batchAdd') {
+                window.batchAdd(obj)
+            } else if (obj.event === 'recycle') {
+                window.recycle(obj)
+            }
+        })
+
+        form.on('submit(query)', function (data) {
+            // url = '/api/search?q=' + data.field.q + '&projectid=' + data.field.projectid;
+            table.reload('host-table', {url: '/api/hosts/search', where: data.field})
+            return false
+        })
+
+        window.add = function () {
+            layer.open({
+                type: 2,
+                title: '新增',
+                shade: 0.1,
+                area: ['500px', '700px'],
+                content: '/hosts/add_host'
+            })
+        }
+
+        window.edit = function (obj) {
+            layer.open({
+                type: 2,
+                title: '修改',
+                shade: 0.1,
+                area: ['500px', '700px'],
+                content: '/hosts/edit_host?id=' + obj.data['id']
+            })
+        }
+
+        window.batchAdd = function (obj) {
+            layer.open({
+                type: 2,
+                title: '批量添加',
+                shade: 0.1,
+                area: ['500px', '500px'],
+                content: '/hosts/batch_add_host'
+            })
+        }
+
+        //弹出窗设置 自己设置弹出百分比
+        function screen() {
+            if (typeof width !== 'number' || width === 0) {
+                width = $(window).width() * 0.8;
+            }
+            if (typeof height !== 'number' || height === 0) {
+                height = $(window).height() - 20;
+            }
+            return [width + 'px', height + 'px'];
+        }
+
+        window.recycle = function (obj) {
+            layer.open({
+                type: 2,
+                title: '回收站',
+                shade: 0.1,
+                area: screen(),
+                content: '/hosts/recycle',
+                cancel: function () {
+                    table.reload('host-table');
+                }
+            })
+        }
+
+        window.remove = function (obj) {
+            layer.confirm('确定要删除该主机吗', {icon: 3, title: '提示'}, function (index) {
+                layer.close(index)
+                let loading = layer.load()
+                $.ajax({
+                    url: '/api/hosts/' + obj.data['id'],
+                    dataType: 'json',
+                    type: 'post',
+                    headers: get_authorization(),
+                    success: function (result) {
+                        layer.close(loading)
+                        if (result.code === 1) {
+                            layer.msg(result.msg, {icon: 1, time: 1000}, function () {
+                                obj.del()
+                            })
+                        } else {
+                            layer.msg(result.msg, {icon: 2, time: 1000})
+                        }
+                    }
+                })
+            })
+        }
+
+        window.batchRemove = function (obj) {
+            let data = table.checkStatus(obj.config.id).data
+            if (data.length === 0) {
+                layer.msg('未选中数据', {
+                    icon: 3,
+                    time: 1000
+                })
+                return false
+            }
+            var ids = []
+            var hasCheck = table.checkStatus('host-table')
+            var hasCheckData = hasCheck.data
+            if (hasCheckData.length > 0) {
+                $.each(hasCheckData, function (index, element) {
+                    ids.push(element.id)
+                })
+            }
+            //console.log(ids)
+            layer.confirm('确定要删除选中主机', {
+                icon: 3,
+                title: '提示'
+            }, function (index) {
+                layer.close(index)
+                let loading = layer.load()
+                $.ajax({
+                    url: '/api/hosts/batch',
+                    data: JSON.stringify({ids: ids}),
+                    dataType: 'json',
+                    type: 'post',
+                    contentType: "application/json; charset=utf-8",
+                    headers: get_authorization(),
+                    success: function (result) {
+                        layer.close(loading)
+                        if (result.code === 1) {
+                            popup.success(result.msg, function () {
+                                table.reload('host-table')
+                            })
+                        } else {
+                            popup.failure(result.msg)
+                        }
+                    }
+                })
+            })
+        }
+
+        window.refresh = function () {
+            table.reload('host-table')
+        }
+    })
+</script>
+</html>

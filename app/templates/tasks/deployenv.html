@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html class="x-admin-sm">
+    <head>
+        <meta charset="UTF-8">
+        <title>环境部署</title>
+        <meta name="renderer" content="webkit">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <meta name="viewport" content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi" />
+        <link rel="stylesheet" href="/static/css/font.css">
+        <link rel="stylesheet" href="/static/css/xadmin.css">
+        <link rel="stylesheet" href="/static/myicon/iconfont.css">
+        <script src="/static/lib/layui/layui.js" charset="utf-8"></script>
+        <script type="text/javascript" src="/static/js/xadmin.js"></script>
+        <script type="text/javascript" src="/static/js/jquery.min.js"></script>
+        <script src="/static/js/my/main.js" charset="utf-8"></script>
+        <script src="/static/js/my/checkToken.js" charset="utf-8"></script>
+        <style type="text/css">
+.ii{
+        display: none;
+        background: #f00;
+        border-radius: 50%;
+        width: 15px;
+        height: 15px;
+        top: 20px;
+        left: 60px;
+        position: absolute;
+        min-width: 8px;
+        line-height: 19px;
+        text-align: center;
+        color: #FFF;
+        z-index: 99999;
+        font-size:5px;
+        margin-top: -11px;
+    }
+        </style>
+        <!--[if lt IE 9]>
+          <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+          <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+    </head>
+    <body>
+        <div class="x-nav">
+          <a class="layui-btn layui-btn-small" style="line-height:1.6em;margin-top:3px;float:right" onclick="location.reload()" title="刷新">
+            <i class="layui-icon layui-icon-refresh" style="line-height:30px"></i></a>
+        </div>
+        <div class="layui-fluid">
+            <div class="layui-row layui-col-space15">
+                <div class="layui-col-md12">
+                    <div class="layui-card">
+                        <div class="layui-card-header">
+                            <div class="layui-col-md4">
+                                <button class="layui-btn" id="add_deployenv"><i class="layui-icon"></i>新建</button>
+                            </div>
+                            <div class="layui-col-md1 layui-col-md-offset7">
+                                <!-- <button type="button" class="layui-btn layui-btn-sm layui-btn-primary">任务列表<div class="nav-counter nav-counter-blue" id="cart-counter"></div></button>-->
+                                <div class="layui-row">
+                                    <div class="layui-col-md1 layui-col-md-offset4">
+                                       <button type="button" class="layui-btn layui-btn-sm layui-btn-primary" id="joblist">任务列表
+                                            <span id='msgnum' class="ii">0</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="layui-card-body layui-table-body layui-table-main">
+                               <table class="layui-table layui-form" id="scripts" lay-filter="scripts">
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> 
+    </body>
+    <script type="text/html" id="toolbarswitchtp">
+        <input type="checkbox" name="enswitch" value={{d.state}} lay-filter="enable" {{ d.state ? 'checked': '' }} lay-skin="switch" lay-text="启用|禁用">
+        <!-- <span class="layui-btn layui-btn-normal layui-btn-mini {{ d.state == 0 ? 'layui-btn-disabled' : ''}} lay-event='is_enable'">{{ d.state == 0 ? '已停用' : '已启用' }}</span> -->
+    </script>
+    <script type="text/html" id="toolbaroper">
+        <a class="layui-btn layui-btn-mini layui-btn-normal" lay-event="manage">版本管理</a>
+        {{# if(d.version == '--'){ }}
+            <a class="layui-btn layui-btn-mini layui-btn-disabled" lay-event="">执行</a>
+        {{# }else{ }}
+            <a class="layui-btn layui-btn-mini layui-btn-normal" lay-event="exec">执行</a>
+        {{# } }}
+        <a class="layui-btn layui-btn-mini layui-btn-danger" lay-event="delete">删除</a>
+    </script>
+    <script>
+      layui.use(['laydate','form', 'table', 'layer', 'element', 'jquery'], function(){
+        var laydate = layui.laydate,
+            form = layui.form,
+            table = layui.table,
+            layer = layui.layer,
+            element = layui.element,
+            d_url = '/api/tasks/scripts',
+            $ = layui.jquery;
+
+        // 监听表格工具栏事件
+        table.on('tool(scripts)', function(obj){
+          var data = obj.data;
+          switch(obj.event){
+            case 'manage':
+              window.location.href = "version_manage?id=" + data.id + "&name=" + data.name;
+            break;
+            case 'showscript':
+              window.location.href = 'script?id=' + data.id;
+            break;
+            case 'exec':
+              window.location.href = "exec_deployenv?id=" + data.id;
+            break;
+            case 'delete':
+              delete_script(obj, data);
+            break;
+          };
+        });
+
+        form.on('switch(enable)', function(data){
+            var state = data.elem.checked ? 1:0,
+                id = data.othis.parents('tr').find("td :first").text();
+                msg = state ? '启用': '禁用'
+            $.ajax({
+              url:'/api/user/' + id,
+              type: 'delete',
+              headers: {
+                "Authorization": 'Bearer ' + localStorage.getItem('token')
+              },
+              data: JSON.stringify({'id': id, 'state': state}),
+              dataType: 'json',
+              contentType: "application/json; charset=utf-8",
+              success:function(data){
+                layer.msg(msg + '成功', {icon: 1});
+                // $(".layui-form-checked").not('.header').parents('tr').remove();
+              },
+              error: function(data){
+                layer.msg(msg + '失败', {icon: 1});
+              }
+            });
+        })
+        
+        // 表格数据加载
+        scripts_render(table, d_url);
+
+        // 监听全选
+        form.on('checkbox(checkall)', function(data){
+
+          if(data.elem.checked){
+            $('tbody input').prop('checked',true);
+          }else{
+            $('tbody input').prop('checked',false);
+          }
+          form.render('checkbox');
+        });         
+        $('#add_deployenv').on('click', function(){
+            window.location.href = "add_deployenv"
+        });
+        $('#joblist').on('click', function(){
+            console.log('job list');
+        });
+      });
+      function tplscript(d) {
+          return '<a style="color:#1E9FFF" href="javascript:void(0);" lay-event="showscript" onmouseover="show_underline(this)" onmouseout="dis_underline(this)">' + d.name + '</a>'
+      }
+      function show_underline(obj){
+            obj.style.textDecoration='underline';
+      }
+      function dis_underline(obj){
+            obj.style.textDecoration='none';
+      }
+    </script>
+</html>

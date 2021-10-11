@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html class="x-admin-sm">
+    <head>
+        <meta charset="UTF-8">
+        <title>版本管理</title>
+        <meta name="renderer" content="webkit">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <meta name="viewport" content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi" />
+        <link rel="stylesheet" href="/static/css/font.css">
+        <link rel="stylesheet" href="/static/css/xadmin.css">
+        <link rel="stylesheet" href="/static/myicon/iconfont.css">
+        <script src="/static/lib/layui/layui.js" charset="utf-8"></script>
+        <script type="text/javascript" src="/static/js/xadmin.js"></script>
+        <script type="text/javascript" src="/static/js/jquery.min.js"></script>
+        <script src="/static/js/my/main.js" charset="utf-8"></script>
+        <script src="/static/js/my/checkToken.js" charset="utf-8"></script>
+        <!--[if lt IE 9]>
+          <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+          <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+    </head>
+    <body>
+        <div class="x-nav">
+            <button class="layui-btn layui-btn-primary" style="border:none" onclick="javascript:history.back(-1);" onmouseover="show_back(this)" onmouseout="dis_back(this)"><i class="layui-icon">&#xe603</i></button>
+            <span id="name">版本管理</span>
+        </div>
+        <div class="layui-fluid" style="background-color:#fff" id="ul-info">
+        </div>
+        <div class="layui-fluid">
+            <div class="layui-row layui-col-space15">
+                <div class="layui-col-md12">
+                    <div class="layui-card">
+                        <div class="layui-card-header">
+                            <button class="layui-btn layui-btn-primary" id="add_script_version"><i class="layui-icon"></i>新建版本</button>
+                        </div>
+                        <div class="layui-card-body layui-table-body layui-table-main">
+                               <table class="layui-table layui-form" id="script-version" lay-filter="script-version">
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> 
+    </body>
+    <script type="text/html" id="toolbarswitchtp">
+        {{# if(d.state == 1){ }}
+            <span>已上线</span>
+        {{# }if(d.state == 2){ }}
+            <span>已下线</span>
+        {{# }if(d.state == 0){ }}
+            <span>未上线</span>
+        {{# } }}
+    </script>
+    <script type="text/html" id="toolbaroper">
+        {{# if(d.state == 1){ }}
+        <a class="layui-btn layui-btn-mini layui-btn-danger" lay-event="disable">下线</a>
+        <a class="layui-btn layui-btn-mini layui-btn-normal" lay-event="copyadd">复制并新建</a>
+        {{# }if(d.state == 2){ }}
+        <a class="layui-btn layui-btn-mini layui-btn-normal" lay-event="enabled">上线</a>
+        <a class="layui-btn layui-btn-mini layui-btn-normal" lay-event="copyadd">复制并新建</a>
+        {{# }if(d.state == 0){ }}
+        <a class="layui-btn layui-btn-mini layui-btn-normal" lay-event="enabled">上线</a>
+        <a class="layui-btn layui-btn-mini layui-btn-normal" lay-event="edit">编辑</a>
+        <a class="layui-btn layui-btn-mini layui-btn-danger" lay-event="delete">删除</a>
+        {{# } }}
+    </script>
+    <script>
+      layui.use(['laydate','form', 'table', 'layer', 'element', 'jquery'], function(){
+        var laydate = layui.laydate,
+            form = layui.form,
+            table = layui.table,
+            layer = layui.layer,
+            element = layui.element,
+            d_url = '/api/tasks/scripts',
+            $ = layui.jquery,
+            args = searchToObject();
+
+        if (args.id !== undefined){
+            script_version_render(table, '/api/tasks/script/' + args.id + '/version', '#script-version')
+            $.ajax({
+                url:'/api/tasks/script/' + args.id,
+                type: 'get',
+                headers: {
+                        "Authorization": 'Bearer ' + getToken()
+                },
+                success:function(data){
+                    var m={'脚本名称': 'name', '更新人': 'username', 
+                            '场景标签':'classifying', '描述': 'description', 
+                            '创建人':'username', '更新时间': 'update_time',
+                            '创建时间': 'create_time'};
+                    if (data.data !== undefined && data.data !== null && data.data.name !== undefined){
+                        $('#name').text("["+data.data.name + "] - 版本管理");
+                        AddInfo(m, data.data);
+                    }
+                }
+            });
+            $('#add_script_version').on('click', function(){
+                window.location.href = "add_script_version?id=" + args.id;
+            });
+        }
+
+        function AddInfo(map, data){
+            var i = 0;
+            var obj_length = Object.keys(map).length;
+            for (var s in map){
+                if ( i%2 === 0){
+                    var ul_str='',ul_str_end='';
+                    ul_str = '<div style="display:inline-block;padding-left: 20px;padding-right: 15%"><ul>';
+                    ul_str_end = '</ul></div>';
+                    ul_str += '<li style="list-style:none;"><div class="form-label" style="display:inline-block;padding-bottom:8px">';
+                    ul_str += '<label style="color:#959595">' + s.toString() + '：</label></div>';
+                    ul_str += '<div class="form-input" style="display:inline-block;padding-bottom:8px">';
+                    ul_str += '<span style="color:#000">' + data[map[s]].toString() + '</span></div></li>';
+                    if (obj_length === i+1){
+                        ul_str += ul_str_end;
+                        $('#ul-info').append(ul_str);
+                    }
+                }else{
+                    ul_str += '<li style="list-style:none;"><div class="form-label" style="display:inline-block;padding-bottom:8px">';
+                    ul_str += '<label style="color:#959595">' + s.toString() + '：</label></div>';
+                    ul_str += '<div class="form-input" style="display:inline-block;padding-bottom:8px">';
+                    ul_str += '<span style="color:#000">' + data[map[s]].toString() + '</span></div></li>';
+                    ul_str += ul_str_end;
+                    $('#ul-info').append(ul_str);
+                }
+                i += 1;
+            }
+        }
+        
+        // 监听表格工具栏事件
+        table.on('tool(script-version)', function(obj){
+          var data = obj.data;
+          switch(obj.event){
+            // 编辑按钮
+            case 'edit':
+                window.location.href = "edit_script_version?id=" + data.id + '&vid=' + data.vid;
+            break;
+            case 'enabled':
+                enable_script($, '/api/tasks/script/' + data.id + '/version/' + data.vid, data, 'enabled')
+            break;
+            case 'disable':
+                disable_script($, '/api/tasks/script/' + data.id + '/version/' + data.vid, data, 'disabled')
+            break;
+            case 'copyadd':
+                window.location.href = "add_script_version?id=" + data.id + '&vid=' + data.vid;
+            break;
+            case 'delete':
+                delete_script_version(obj, $, '/api/tasks/script/' + data.id + '/version/' + data.vid, data);
+            break;
+            case 'showversion':
+              window.location.href = "script_version?id=" + data.id + '&vid=' + data.vid;
+            break;
+          };
+        });
+
+        // 监听全选
+        form.on('checkbox(checkall)', function(data){
+
+          if(data.elem.checked){
+            $('tbody input').prop('checked',true);
+          }else{
+            $('tbody input').prop('checked',false);
+          }
+          form.render('checkbox');
+        });         
+
+      });
+      function tplscript(d) {
+          return '<a style="color:#1E9FFF" href="javascript:void(0);" lay-event="showversion" onmouseover="show_underline(this)" onmouseout="dis_underline(this)">' + d.version + '</a>'
+      }
+      function show_underline(obj){
+            obj.style.textDecoration='underline';
+      }
+      function dis_underline(obj){
+            obj.style.textDecoration='none';
+      }
+      function show_back(obj){
+        obj.style.backgroundColor='#ECECEC';
+      }
+      function dis_back(obj){
+        obj.style.backgroundColor='#FFF';
+      };
+    </script>
+</html>

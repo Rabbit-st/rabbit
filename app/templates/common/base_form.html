@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+{% import 'common/base_macro.html' as base_macro %}
+
+<head>
+    {% block title %}
+        <title></title>
+    {% endblock %}
+{% block head %}
+    {{ base_macro.header_auth() }}
+{% endblock %}
+</head>
+<body>
+<form class="layui-form" action="" id="form-data" lay-filter="form-data">
+    <div class="mainBox">
+        <div class="main-container">
+            <div class="main-container">
+                {% block form_item %}
+                {% endblock %}
+            </div>
+        </div>
+    </div>
+    <div class="bottom">
+        <div class="button-container">
+            {% block form_button %}
+                {{ base_macro.button(lay_event="save", text='提交',button_class="pear-btn-primary pear-btn-sm", i_class="layui-icon-ok",type="submit") }}
+                {{ base_macro.button(lay_event="", text='重置',button_class="ear-btn-sm", i_class="layui-icon-refresh",type="reset") }}
+            {% endblock %}
+        </div>
+    </div>
+</form>
+</body>
+
+{% include 'common/footer.html' %}
+
+{% block script %}
+{% endblock %}
+
+</html>

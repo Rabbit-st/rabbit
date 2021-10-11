@@ -1,0 +1,140 @@
+{% extends "common/base_table.html" %}
+
+{% import 'common/base_macro.html' as base_macro %}
+
+{% block title %}
+        <title>ssh</title>
+{% endblock %}
+{% block search_item %}
+    {{ base_macro.search_input('名称', 'name') }}
+{% endblock %}
+
+{% block script %}
+<script>
+    layui.use(['table', 'form', 'jquery', 'popup'], function () {
+        let table = layui.table
+        let form = layui.form
+        let $ = layui.jquery
+        let popup = layui.popup
+
+        let cols = [
+            [
+                {title: 'id', field: 'id', align: 'center', width: 100},
+                {title: '名称', field: 'name', align: 'center', width: 100},
+                {title: '用户名', field: 'ssh_user', align: 'center'},
+                {title: '备注', field: 'remark', align: 'center'},
+                {title: '状态', field: 'state', align: 'center',templet: '#state-switch'},
+                {title: '操作', toolbar: '#table-bar', align: 'center', width: 195}
+            ]
+        ]
+
+        table.render({
+            elem: '#table-data',
+            url: '/api/ssh_users',
+            page: true,
+            cols: cols,
+            skin: 'line',
+            headers: get_authorization(),
+            toolbar: '#table-toolbar',
+            defaultToolbar: [{
+                layEvent: 'refresh',
+                icon: 'layui-icon-refresh',
+            }, 'filter', 'print', 'exports']
+        })
+
+        table.on('tool(table-data)', function (obj) {
+            if (obj.event === 'remove') {
+                window.remove(obj)
+            } else if (obj.event === 'edit') {
+                window.edit(obj)
+            }
+        })
+
+        table.on('toolbar(table-data)', function (obj) {
+            if (obj.event === 'add') {
+                window.add()
+            } else if (obj.event === 'refresh') {
+                window.refresh()
+            }
+        })
+
+        form.on('submit(query)', function (data) {
+            // url = '/api/search?q=' + data.field.q + '&projectid=' + data.field.projectid;
+            table.reload('table-data', {url: '/api/ssh_users/search', where: data.field})
+            return false
+        })
+
+        window.add = function () {
+            layer.open({
+                type: 2,
+                title: '新增',
+                shade: 0.1,
+                area: ['500px', '500px'],
+                content: '/ssh_users/add_ssh_user'
+            })
+        }
+
+        window.edit = function (obj) {
+            layer.open({
+                type: 2,
+                title: '修改',
+                shade: 0.1,
+                area: ['500px', '500px'],
+                content: '/ssh_users/edit_ssh_user?id=' + obj.data['id']
+            })
+        }
+
+        window.remove = function (obj) {
+            layer.confirm('确定要删除吗', {icon: 3, title: '提示'}, function (index) {
+                layer.close(index)
+                let loading = layer.load()
+                $.ajax({
+                    url: '/api/ssh_users/' + obj.data['id'],
+                    dataType: 'json',
+                    type: 'delete',
+                    headers: get_authorization(),
+                    success: function (result) {
+                        layer.close(loading)
+                        if (result.code === 1) {
+                            layer.msg(result.msg, {icon: 1, time: 1000}, function () {
+                                obj.del()
+                            })
+                        } else {
+                            layer.msg(result.msg, {icon: 2, time: 1000})
+                        }
+                    }
+                })
+            })
+        }
+
+        form.on('switch(state)', function (obj) {
+            if (obj.elem.checked) {
+                state = 1
+            } else {
+                state = 0
+            }
+            let loading = layer.load()
+            $.ajax({
+                url: '/api/ssh_users/state/' + this.value,
+                data: JSON.stringify({state: state}),
+                dataType: 'json',
+                contentType: 'application/json',
+                headers: get_authorization(),
+                type: 'put',
+                success: function (result) {
+                    layer.close(loading)
+                    if (result.code == 1) {
+                        popup.success(result.msg)
+                    } else {
+                        popup.failure(result.msg)
+                    }
+                }
+            })
+        })
+
+        window.refresh = function () {
+            table.reload('table-data')
+        }
+    })
+</script>
+{% endblock %}

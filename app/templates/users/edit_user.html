@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>用户修改</title>
+    {% include 'common/auth.html' %}
+    {% include 'common/header.html' %}
+</head>
+<body>
+<form class="layui-form" lay-filter="user">
+    <div class="mainBox">
+        <div class="main-container">
+            <div class="main-container">
+                <div class="layui-form-item layui-hide">
+                    <label class="layui-form-label">id</label>
+                    <div class="layui-input-block">
+                        <input type="text" value="" name="id" lay-verify="required"
+                               autocomplete="off" placeholder="id" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">账号</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="username" lay-verify="required" autocomplete="off" placeholder="请输入标题"
+                               class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">姓名</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="nickname" lay-verify="required" autocomplete="off" placeholder="请输入标题"
+                               class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">邮箱</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="email" lay-verify="email" autocomplete="off" placeholder="请输入邮箱"
+                               class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">密码</label>
+                    <div class="layui-input-block">
+                        <input type="password" name="password" id="L_password" lay-verify="pass" autocomplete="off"
+                               placeholder="请输入密码"
+                               class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">确认密码</label>
+                    <div class="layui-input-block">
+                        <input type="password" name="password2" id="L_repass" lay-verify="repass" autocomplete="off"
+                               placeholder="请输入密码"
+                               class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">角色</label>
+                    <div class="layui-input-block">
+                        <div id="role" name="role" class="xm-select"></div>
+                    </div>
+                </div>
+                <div class="layui-form-item layui-form-text">
+                    <label class="layui-form-label">描述</label>
+                    <div class="layui-input-block">
+                        <textarea placeholder="请输入描述" name="remark" class="layui-textarea"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="bottom">
+        <div class="button-container">
+            <button type="submit" class="pear-btn pear-btn-primary pear-btn-sm" lay-submit="" lay-filter="user-save">
+                <i class="layui-icon layui-icon-ok"></i>
+                提交
+            </button>
+            <button type="reset" class="pear-btn pear-btn-sm">
+                <i class="layui-icon layui-icon-refresh"></i>
+                重置
+            </button>
+        </div>
+    </div>
+</form>
+{% include 'common/footer.html' %}
+<script>
+    layui.use(['form', 'jquery'], function () {
+        let form = layui.form
+        let $ = layui.jquery
+        let args = searchToObject()
+        let roleIds
+
+        if (args.id !== undefined) {
+            $.ajax({
+                url: '/api/user/' + args.id,
+                type: 'get',
+                headers: get_authorization(),
+                async: false,
+                success: function (res) {
+                    if (res.code == 1) {
+                        form.val("user", {
+                            "id": res.data.id
+                            , "username": res.data.username
+                            , "nickname": res.data.nickname
+                            , "email": res.data.email
+                            , "remark": res.data.remark
+                        });
+                        roleIds = res.data.role;
+                    } else if (res.code == 403) {
+                        layer.msg(res.msg, {icon: 2, time: 1000}, function () {
+                            parent.layer.close(parent.layer.getFrameIndex(window.name))//关闭当前页
+                            parent.render()
+                        });
+                    } else {
+                        layer.msg('服务器异常', {icon: 2, time: 1000})
+                    }
+                }
+            })
+        }
+        // 下拉框
+        $.ajax({
+            url: '/api/roles?page=1&limit=5',
+            type: 'get',
+            headers: get_authorization(),
+            success: function (res) {
+                let data
+                if (res.code == 0) {
+                    data = res.data;
+                } else {
+                    data = [];
+                }
+                var role_select = xmSelect.render({
+                    el: '#role',
+                    prop: {
+                        name: 'roleName',
+                        value: 'id'
+                    },
+                    theme: {
+                        color:localStorage.getItem('theme-color-context','#8dc63f')
+                    },
+                    initValue: roleIds,
+                    name: 'role',
+                    data: data,
+                    paging: true,
+                    filterable: true,
+                    pageEmptyShow: false,
+                    pageSize: 5,
+                    toolbar: {
+                        show: true,
+                    },
+                    pageRemote: true,
+                    empty: '呀, 没有数据呢',
+                    remoteMethod: function (val, cb, show, pageIndex) {
+                        // val: 搜索框的内容, 不开启搜索默认为空, cb: 回调函数, show: 当前下拉框是否展开, pageIndex: 当前第几页
+                        $.ajax({
+                            method: 'get',
+                            url: '/api/roles?page=' + pageIndex + '&limit=5&s=' + val,
+                            headers: get_authorization(),
+                            success: function (res) {
+                                if (res.code == 0) {
+                                    // 分页回调
+                                    cb(res.data, res.count / 5);
+                                } else {
+                                    cb(res.msg, 0);
+                                }
+                            }
+                        })
+                    }
+                })
+            }
+        })
+        form.verify({
+            repass: function (value) {
+                if ($('#L_password').val() != $('#L_repass').val()) {
+                    return '两次密码不一致';
+                }
+            },
+            pass: function (value) {
+                if (value.length == 0) {
+                    return
+                }
+                if (value.length < 9) {
+                    return '密码至少要9位数';
+                }
+                if (!/\d/.test(value)) {
+                    return '密码没有包含数字';
+                }
+                if (!/[a-z]/.test(value)) {
+                    return '密码没有包含小写字母';
+                }
+                if (!/[A-Z]/.test(value)) {
+                    return '密码没有包含大写字母';
+                }
+                if (!/\W/.test(value)) {
+                    return '密码没有包含特殊字符';
+                }
+            }
+        });
+
+        form.on('submit(user-save)', function (data) {
+            //console.log(data.field);
+            $.ajax({
+                url: '/api/user/'+args.id,
+                data: JSON.stringify(data.field),
+                dataType: 'json',
+                contentType: 'application/json',
+                headers: get_authorization(),
+                type: 'PUT',
+                success: function (result) {
+                    if (result.code === 1) {
+                        layer.msg(result.msg, {icon: 1, time: 1000}, function () {
+                            parent.layer.close(parent.layer.getFrameIndex(window.name))//关闭当前页
+                            parent.layui.table.reload('table-data')
+                        })
+                    } else {
+                                      let msg=''
+              if (Object.prototype.toString.call(result.msg)=== '[object Object]') {
+                  for(var i in result.msg) {
+                      msg += result.msg[i][0] + '\n';
+                  }
+              } else {
+                  msg = result.msg;
+              }
+            layer.msg(msg, { icon: 2, time: 1000 })
+                    }
+                }
+            })
+            return false
+        })
+    })
+</script>
+<script>
+</script>
+</body>
+</html>

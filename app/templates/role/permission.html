@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>角色授权</title>
+    {% include 'common/auth.html' %}
+    {% include 'common/header.html' %}
+<body>
+<form class="layui-form" action="">
+    <div class="mainBox">
+        <div class="main-container">
+            <div class="main-container">
+                <div id="role-permission" class="transfer"></div>
+            </div>
+        </div>
+    </div>
+    <div class="bottom">
+        <div class="button-container">
+            <button type="submit" class="pear-btn pear-btn-primary pear-btn-sm" lay-submit=""
+                    lay-filter="permission-save">
+                <i class="layui-icon layui-icon-ok"></i>
+                提交
+            </button>
+            <button type="reset" class="pear-btn pear-btn-sm">
+                <i class="layui-icon layui-icon-refresh"></i>
+                重置
+            </button>
+        </div>
+    </div>
+</form>
+{% include 'common/footer.html' %}
+<script>
+    layui.use(['dtree', 'form', 'jquery', 'transfer'], function () {
+        let transfer = layui.transfer
+        let form = layui.form
+        let $ = layui.jquery
+        let args = searchToObject()
+
+        if (args.id !== undefined) {
+            $.ajax({
+                url: '/api/role/permissions/' + args.id,
+                type: 'get',
+                headers: get_authorization(),
+                async: false,
+                success: function (res) {
+                    transfer.render({
+                        elem: '#role-permission'
+                        , title: ['选择权限', '已选择']
+                        , showSearch: true
+                        , data: res.data.permissions
+                        , value: res.data.checked
+                        , height: 300
+                        , id: 'role-permission'
+                        , parseData: function (res) {
+                            return {
+                                "value": res.id
+                                , "title": res.name + '\(' + res.type + '\)'
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
+        form.on('submit(permission-save)', function (data) {
+            let ps = transfer.getData('role-permission')
+            let ids = []
+            for (var i in ps) {
+                ids.push(ps[i].value);
+            }
+            $.ajax({
+                url: '/api/role/permissions/' + args.id,
+                data: JSON.stringify({ids: ids}),
+                dataType: 'json',
+                type: 'put',
+                contentType: 'application/json',
+                headers: get_authorization(),
+                success: function (result) {
+                    if (result.code === 1) {
+                        layer.msg(result.msg, {icon: 1, time: 1000}, function () {
+                            parent.layer.close(parent.layer.getFrameIndex(window.name))
+                        })
+                    } else {
+                        layer.msg(result.msg, {icon: 2, time: 1000})
+                    }
+                }
+            })
+            return false
+        })
+
+    })
+</script>
+</body>
+</html>

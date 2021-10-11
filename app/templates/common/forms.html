@@ -1,0 +1,29 @@
+{% macro input(name, id='', value='', type='text') -%}
+    <input type="{{ type }}" name="{{ name }}" id="{{ id }}" value="{{ value }}" placeholder="" class="layui-input">
+{%- endmacro %}
+
+{% macro select(id,name) -%}
+    <div id="{{ id }}" name="{{ name }}" class="xm-select"></div>
+{%- endmacro %}
+
+{% macro label(name) -%}
+    <label class="layui-form-label">{{ name }}</label>
+{%- endmacro %}
+
+{% macro search_input(label_name, name, id='', class_type='layui-input-inline', value='', type='text') -%}
+    <label class="layui-form-label">{{ label_name }}</label>
+    <div class="{{ class_type }}">
+        <input type="{{ type }}" name="{{ name }}" id="{{ id }}" value="{{ value }}" placeholder="" class="layui-input">
+    </div>
+{%- endmacro %}
+
+{% macro search_button() %}
+    <button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query">
+        <i class="layui-icon layui-icon-search"></i>
+        查询
+    </button>
+    <button type="reset" class="pear-btn pear-btn-md">
+        <i class="layui-icon layui-icon-refresh"></i>
+        重置
+    </button>
+{%- endmacro%}

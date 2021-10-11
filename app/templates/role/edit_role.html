@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>角色编辑</title>
+    {% include 'common/auth.html' %}
+    {% include 'common/header.html' %}
+<body>
+<form class="layui-form" action="" lay-filter="role">
+    <div class="mainBox">
+        <div class="main-container">
+            <div class="main-container">
+                <div class="layui-form-item layui-hide">
+                    <label class="layui-form-label">编号</label>
+                    <div class="layui-input-block">
+                        <input type="text" value="" name="id" lay-verify="title"
+                               autocomplete="off" placeholder="id" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">名称</label>
+                    <div class="layui-input-block">
+                        <input type="text" value="" name="roleName" lay-verify="title"
+                               autocomplete="off" placeholder="请输入名称" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">类型</label>
+                    <div class="layui-input-block">
+                        <input type="text" value="" readonly name="roleType" lay-verify="title"
+                               autocomplete="off" placeholder="请输入类型" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">状态</label>
+                    <div class="layui-input-block">
+                        <input type="radio" name="state" value="1"
+                               title="开启">
+                        <input type="radio" name="state" value="0"
+                               title="关闭">
+                    </div>
+                </div>
+                <div class="layui-form-item layui-form-text">
+                    <label class="layui-form-label">描述</label>
+                    <div class="layui-input-block">
+                        <textarea placeholder="请输入描述" name="remark"
+                                  class="layui-textarea"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="bottom">
+        <div class="button-container">
+            <button type="submit" class="pear-btn pear-btn-primary pear-btn-sm" lay-submit=""
+                    lay-filter="role-update">
+                <i class="layui-icon layui-icon-ok"></i>
+                提交
+            </button>
+            <button type="reset" class="pear-btn pear-btn-sm">
+                <i class="layui-icon layui-icon-refresh"></i>
+                重置
+            </button>
+        </div>
+    </div>
+</form>
+{% include 'common/footer.html' %}
+<script>
+  layui.use(['form', 'jquery'], function () {
+    let form = layui.form
+    let $ = layui.jquery
+      let args = searchToObject()
+
+      if (args.id !== undefined){
+        $.ajax({
+            url:'/api/role/' + args.id,
+            type: 'get',
+            headers: get_authorization(),
+            async: false,
+            success:function(res){
+                if (res.code == 1 ) {
+                    form.val("role", {
+                        "id": res.data.id
+                        ,"roleName": res.data.roleName
+                        ,"roleType": res.data.roleType
+                        ,"state": res.data.state
+                        ,"remark": res.data.remark
+                    });
+                } else if (res.code == 403 ) {
+                    layer.msg(res.msg, {icon: 2,time: 1000}, function () {
+                        parent.layer.close(parent.layer.getFrameIndex(window.name))//关闭当前页
+                        parent.render()
+                    });
+                } else {
+                    layer.msg('服务器异常', {icon: 2,time: 1000})
+                }
+            }
+        })
+    }
+
+    form.on('submit(role-update)', function (data) {
+      $.ajax({
+        url: '/api/role/' + args.id,
+        data: JSON.stringify(data.field),
+        dataType: 'json',
+        contentType: 'application/json',
+        type: 'put',
+          headers: get_authorization(),
+        success: function (result) {
+          if (result.code === 1) {
+            layer.msg(result.msg, { icon: 1, time: 1000 }, function () {
+              parent.layer.close(parent.layer.getFrameIndex(window.name))//关闭当前页
+              parent.layui.table.reload('role-table')
+            })
+          } else if (result.code == 403 ) {
+                    layer.msg(result.msg, {icon: 2,time: 1000}, function () {
+                        parent.layer.close(parent.layer.getFrameIndex(window.name))//关闭当前页
+                        parent.render()
+                    });
+          }else {
+            layer.msg(result.msg, { icon: 2, time: 1000 })
+          }
+        }
+      })
+      return false
+    })
+  })
+</script>
+<script>
+</script>
+</body>
+</html>
